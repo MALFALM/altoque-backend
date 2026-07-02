@@ -4,7 +4,7 @@ const pool = require("../config/db");
 
 const register = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, rol = "client" } = req.body;
 
     if (!username || !password) {
       return res.status(400).json({
@@ -106,7 +106,28 @@ const login = async (req, res) => {
   }
 };
 
+const getUsers = async (req, res) => {
+  try {
+    const [users] = await pool.query(
+      "SELECT id_user, username, rol, estado_cuenta FROM User"
+    );
+
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error("Error al listar usuarios:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al listar usuarios",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   register,
-  login
+  login,
+  getUsers
 };
