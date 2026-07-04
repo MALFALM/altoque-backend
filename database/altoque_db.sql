@@ -1,19 +1,23 @@
 CREATE DATABASE IF NOT EXISTS altoque_db;
 USE altoque_db;
 
+DROP TABLE IF EXISTS Promocion;
+DROP TABLE IF EXISTS ProductoFinanciero;
 DROP TABLE IF EXISTS CronogramaPago;
 DROP TABLE IF EXISTS Credito;
 DROP TABLE IF EXISTS Vehiculo;
 DROP TABLE IF EXISTS Cliente;
-DROP TABLE IF EXISTS User;
+DROP TABLE IF EXISTS `User`;
 
-CREATE TABLE User (
+CREATE TABLE `User` (
   id_user INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash VARCHAR(256) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'client',
   estado_cuenta BOOL NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  suspension_until DATETIME NULL,
+  suspension_reason VARCHAR(255) NULL
 );
 
 CREATE TABLE Cliente (
@@ -26,7 +30,7 @@ CREATE TABLE Cliente (
   telefono VARCHAR(12) UNIQUE,
   ingreso_mensual DECIMAL(14,2),
   correo VARCHAR(50) UNIQUE,
-  FOREIGN KEY (id_user) REFERENCES User(id_user)
+  FOREIGN KEY (id_user) REFERENCES `User`(id_user)
 );
 
 CREATE TABLE Vehiculo (
@@ -62,7 +66,7 @@ CREATE TABLE Credito (
   seguro_vehicular DECIMAL(14,2),
   portes DECIMAL(14,2),
   FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
-  FOREIGN KEY (id_user) REFERENCES User(id_user),
+  FOREIGN KEY (id_user) REFERENCES `User`(id_user),
   FOREIGN KEY (id_vehiculo) REFERENCES Vehiculo(id_vehiculo)
 );
 
@@ -95,7 +99,7 @@ CREATE TABLE ProductoFinanciero (
   portes_fijo DECIMAL(10,2) DEFAULT 0,
   estado BOOL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_user) REFERENCES User(id_user)
+  FOREIGN KEY (id_user) REFERENCES `User`(id_user)
 );
 
 CREATE TABLE Promocion (
@@ -109,15 +113,6 @@ CREATE TABLE Promocion (
   fecha_inicio DATE NULL,
   fecha_fin DATE NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_user) REFERENCES User(id_user),
+  FOREIGN KEY (id_user) REFERENCES `User`(id_user),
   FOREIGN KEY (id_producto) REFERENCES ProductoFinanciero(id_producto)
-);
-
-CREATE TABLE BankConfig (
-  id_config INT AUTO_INCREMENT PRIMARY KEY,
-  id_user INT NOT NULL UNIQUE,
-  nombre_comercial VARCHAR(100),
-  color_principal VARCHAR(20) DEFAULT '#e458c6',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_user) REFERENCES User(id_user)
 );
