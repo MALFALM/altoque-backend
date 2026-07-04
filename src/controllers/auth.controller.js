@@ -59,9 +59,20 @@ const login = async (req, res) => {
     }
 
     const [users] = await pool.query(
-      "SELECT * FROM User WHERE username = ? AND estado_cuenta = true",
-      [username]
-    );
+  `
+  SELECT 
+    id_user,
+    username,
+    password_hash,
+    rol,
+    estado_cuenta,
+    suspension_until,
+    suspension_reason
+  FROM \`User\`
+  WHERE username = ?
+  `,
+  [username]
+);
 
     if (users.length === 0) {
       return res.status(401).json({
@@ -70,6 +81,30 @@ const login = async (req, res) => {
     }
 
     const user = users[0];
+
+    if (!user.estado_cuenta) {
+  if (
+    user.suspension_until &&
+    new Date(user.suspension_until) <= new Date()
+  ) {
+    await pool.query(
+      `
+      UPDATE \`User\`
+      SET estado_cuenta = true,
+          suspension_until = NULL,
+          suspension_reason = NULL
+      WHERE id_user = ?
+      `,
+      [user.id_user]
+    );
+
+    user.estado_cuenta = true;
+  } else {
+    return res.status(403).json({
+      message: "Tu cuenta se encuentra suspendida temporalmente"
+    });
+  }
+}
 
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
@@ -109,7 +144,7 @@ const login = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     const [users] = await pool.query(
-      "SELECT id_user, username, rol, estado_cuenta FROM User"
+      "SELECT id_user, username, rol, estado_cuenta, created_at  FROM User"
     );
 
     res.json({
@@ -224,11 +259,112 @@ const createBankUser = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { id_user, currentPassword, newPassword } = req.body;
+
+    if (!id_user || !currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Todos los campos son obligatorios"
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        message: "La nueva contraseña debe tener mínimo 8 caracteres"
+      });
+    }
+
+    const [users] = await pool.query(
+      "SELECT id_user, password_hash FROM User WHERE id_user = ?",
+      [id_user]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: "Usuario no encontrado"
+      });
+    }
+
+    const user = users[0];
+
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password_hash
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: "La contraseña actual es incorrecta"
+      });
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    await pool.query(
+      "UPDATE User SET password_hash = ? WHERE id_user = ?",
+      [newPasswordHash, id_user]
+    );
+
+    return res.json({
+      message: "Contraseña actualizada correctamente"
+    });
+  } catch (error) {
+    console.error("Error al cambiar contraseña:", error);
+
+    return res.status(500).json({
+      message: "Error al cambiar contraseña",
+      error: error.message
+    });
+  }
+};
+
+const suspendUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const [users] = await pool.query(
+      "SELECT id_user, username, rol FROM `User` WHERE id_user = ?",
+      [id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: "Usuario no encontrado"
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE \`User\`
+      SET estado_cuenta = false,
+          suspension_until = DATE_ADD(NOW(), INTERVAL 1 DAY),
+          suspension_reason = ?
+      WHERE id_user = ?
+      `,
+      [reason || "Suspensión temporal solicitada por la entidad financiera", id]
+    );
+
+    return res.json({
+      message: "Cuenta suspendida temporalmente por 24 horas"
+    });
+  } catch (error) {
+    console.error("Error al suspender cuenta:", error);
+
+    return res.status(500).json({
+      message: "Error al suspender cuenta",
+      error: error.message
+    });
+  }
+};
 
 module.exports = {
   register,
   login,
   getUsers,
   updateUserRole,
-  createBankUser
+  createBankUser,
+  changePassword,
+  suspendUser
 };

@@ -12,7 +12,8 @@ CREATE TABLE User (
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash VARCHAR(256) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'client',
-  estado_cuenta BOOL NOT NULL DEFAULT TRUE
+  estado_cuenta BOOL NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Cliente (
@@ -81,4 +82,42 @@ CREATE TABLE CronogramaPago (
   amortizacion DECIMAL(14,2) NOT NULL,
   saldo_final_mes DECIMAL(14,2) NOT NULL,
   FOREIGN KEY (id_credito) REFERENCES Credito(id_credito)
+);
+
+CREATE TABLE ProductoFinanciero (
+  id_producto INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL,
+  nombre_producto VARCHAR(100) NOT NULL,
+  tasa_valor DECIMAL(10,2) NOT NULL,
+  tipo_tasa VARCHAR(20) NOT NULL,
+  desgravamen_mensual DECIMAL(10,2) DEFAULT 0,
+  seguro_vehicular DECIMAL(10,2) DEFAULT 0,
+  portes_fijo DECIMAL(10,2) DEFAULT 0,
+  estado BOOL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES User(id_user)
+);
+
+CREATE TABLE Promocion (
+  id_promocion INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL,
+  id_producto INT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  descripcion TEXT,
+  beneficio VARCHAR(150) NOT NULL,
+  estado VARCHAR(20) DEFAULT 'activa',
+  fecha_inicio DATE NULL,
+  fecha_fin DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES User(id_user),
+  FOREIGN KEY (id_producto) REFERENCES ProductoFinanciero(id_producto)
+);
+
+CREATE TABLE BankConfig (
+  id_config INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL UNIQUE,
+  nombre_comercial VARCHAR(100),
+  color_principal VARCHAR(20) DEFAULT '#e458c6',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES User(id_user)
 );
