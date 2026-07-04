@@ -1,9 +1,11 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
+const { authenticateToken, authorizeRoles } = require("../middleware/auth.middleware");
 
 const {
   register,
   login,
+  bootstrapAdmin,
   getUsers,
   updateUserRole,
   createBankUser
@@ -11,8 +13,9 @@ const {
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/users", getUsers);
-router.patch("/users/:id/role", updateUserRole);
-router.post("/banks", createBankUser);
+router.post("/bootstrap-admin", bootstrapAdmin);
+router.get("/users", authenticateToken, authorizeRoles("admin"), getUsers);
+router.patch("/users/:id/role", authenticateToken, authorizeRoles("admin"), updateUserRole);
+router.post("/banks", authenticateToken, authorizeRoles("admin"), createBankUser);
 
 module.exports = router;
