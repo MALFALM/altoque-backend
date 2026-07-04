@@ -11,7 +11,7 @@ CREATE TABLE User (
   id_user INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash VARCHAR(256) NOT NULL,
-  rol VARCHAR(10) NOT NULL DEFAULT 'asesor',
+  rol VARCHAR(20) NOT NULL DEFAULT 'client',
   estado_cuenta BOOL NOT NULL DEFAULT TRUE
 );
 
