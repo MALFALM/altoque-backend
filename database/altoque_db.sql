@@ -1,6 +1,8 @@
 CREATE DATABASE IF NOT EXISTS altoque_db;
 USE altoque_db;
 
+DROP TABLE IF EXISTS SupportMessage;
+DROP TABLE IF EXISTS SupportTicket;
 DROP TABLE IF EXISTS Promocion;
 DROP TABLE IF EXISTS ProductoFinanciero;
 DROP TABLE IF EXISTS CronogramaPago;
@@ -116,4 +118,24 @@ CREATE TABLE Promocion (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_user) REFERENCES `User`(id_user),
   FOREIGN KEY (id_producto) REFERENCES ProductoFinanciero(id_producto)
+);
+
+CREATE TABLE SupportTicket (
+  id_ticket INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL,
+  subject VARCHAR(150) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'open',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES `User`(id_user)
+);
+
+CREATE TABLE SupportMessage (
+  id_message INT AUTO_INCREMENT PRIMARY KEY,
+  id_ticket INT NOT NULL,
+  sender_role VARCHAR(20) NOT NULL,
+  sender_name VARCHAR(100) NOT NULL,
+  message_text TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_ticket) REFERENCES SupportTicket(id_ticket)
 );

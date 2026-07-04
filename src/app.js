@@ -4,6 +4,7 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth.routes");
 const creditoRoutes = require("./routes/credito.routes");
+const supportRoutes = require("./routes/support.routes");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/creditos", creditoRoutes);
+app.use("/api/support", supportRoutes);
 
 const PORT = process.env.PORT || 3000;
 
