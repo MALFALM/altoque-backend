@@ -67,7 +67,8 @@ const login = async (req, res) => {
     rol,
     estado_cuenta,
     suspension_until,
-    suspension_reason
+    suspension_reason,
+    display_name
   FROM \`User\`
   WHERE username = ?
   `,
@@ -130,7 +131,8 @@ const login = async (req, res) => {
       user: {
         id_user: user.id_user,
         username: user.username,
-        rol: user.rol
+        rol: user.rol,
+        display_name: user.display_name
       }
     });
   } catch (error) {
@@ -144,7 +146,7 @@ const login = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     const [users] = await pool.query(
-      "SELECT id_user, username, rol, estado_cuenta, created_at  FROM User"
+      "SELECT id_user, username, rol, estado_cuenta, created_at, display_name FROM `User`"
     );
 
     res.json({
@@ -359,6 +361,45 @@ const suspendUser = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { display_name } = req.body;
+
+    if (!display_name || display_name.trim().length < 2) {
+      return res.status(400).json({
+        message: "El nombre debe tener al menos 2 caracteres"
+      });
+    }
+
+    const [result] = await pool.query(
+      "UPDATE `User` SET display_name = ? WHERE id_user = ?",
+      [display_name.trim(), id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Usuario no encontrado"
+      });
+    }
+
+    return res.json({
+      message: "Perfil actualizado correctamente",
+      user: {
+        id_user: Number(id),
+        display_name: display_name.trim()
+      }
+    });
+  } catch (error) {
+    console.error("Error al actualizar perfil:", error);
+
+    return res.status(500).json({
+      message: "Error al actualizar perfil",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -366,5 +407,6 @@ module.exports = {
   updateUserRole,
   createBankUser,
   changePassword,
-  suspendUser
+  suspendUser,
+  updateProfile
 };

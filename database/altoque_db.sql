@@ -17,7 +17,8 @@ CREATE TABLE `User` (
   estado_cuenta BOOL NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   suspension_until DATETIME NULL,
-  suspension_reason VARCHAR(255) NULL
+  suspension_reason VARCHAR(255) NULL,
+  display_name VARCHAR(100) NULL
 );
 
 CREATE TABLE Cliente (

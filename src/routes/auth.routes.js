@@ -8,7 +8,8 @@ const {
   updateUserRole,
   createBankUser,
   changePassword,
-  suspendUser
+  suspendUser,
+  updateProfile
 } = require("../controllers/auth.controller");
 
 router.post("/register", register);
@@ -18,5 +19,6 @@ router.patch("/users/:id/role", updateUserRole);
 router.post("/banks", createBankUser);
 router.patch("/change-password", changePassword);
 router.patch("/users/:id/suspend", suspendUser);
+router.patch("/users/:id/profile", updateProfile);
 
 module.exports = router;
