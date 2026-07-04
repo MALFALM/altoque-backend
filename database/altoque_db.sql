@@ -24,9 +24,7 @@ CREATE TABLE User (
   password_hash VARCHAR(256) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'client',
   estado_cuenta BOOL NOT NULL DEFAULT TRUE,
-  id_entidad_financiera VARCHAR(50),
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_entidad_financiera) REFERENCES EntidadFinanciera(id_entidad_financiera)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Cliente (
@@ -126,18 +124,43 @@ CREATE TABLE CronogramaPago (
   interes_mes DECIMAL(14,2) NOT NULL,
   amortizacion DECIMAL(14,2) NOT NULL,
   saldo_final_mes DECIMAL(14,2) NOT NULL,
-  FOREIGN KEY (id_credito) REFERENCES Credito(id_credito) ON DELETE CASCADE
+  FOREIGN KEY (id_credito) REFERENCES Credito(id_credito)
 );
 
-INSERT INTO EntidadFinanciera (id_entidad_financiera, nombre, theme_color, estado) VALUES
-('bcp', 'Banco de Credito del Peru (BCP)', '#ff5a00', 'active'),
-('interbank', 'Interbank', '#00b14f', 'active'),
-('bbva', 'BBVA', '#072146', 'active');
+CREATE TABLE ProductoFinanciero (
+  id_producto INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL,
+  nombre_producto VARCHAR(100) NOT NULL,
+  tasa_valor DECIMAL(10,2) NOT NULL,
+  tipo_tasa VARCHAR(20) NOT NULL,
+  desgravamen_mensual DECIMAL(10,2) DEFAULT 0,
+  seguro_vehicular DECIMAL(10,2) DEFAULT 0,
+  portes_fijo DECIMAL(10,2) DEFAULT 0,
+  estado BOOL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES User(id_user)
+);
 
-INSERT INTO ProductoFinanciero
-(id_producto, id_entidad_financiera, nombre, tipo_tasa, tasa_valor, capitalizacion, has_desgravamen, tasa_desgravamen, has_seguro_vehicular, seguro_vehicular_pct, has_portes, portes_valor, activo)
-VALUES
-('bcp-vehicular', 'bcp', 'Credito Vehicular BCP', 'TEA', 12.9900, 12, true, 0.0560, true, 0.1000, true, 10.00, true),
-('interbank-vehicular-tna', 'interbank', 'Auto Facil (Campana TNA)', 'TNA', 11.5000, 12, true, 0.0500, true, 0.1200, true, 8.50, true),
-('interbank-vehicular-tea', 'interbank', 'Auto Facil (Tasa Fija TEA)', 'TEA', 14.5000, 12, true, 0.0500, true, 0.1200, false, 0.00, true),
-('bbva-vehicular', 'bbva', 'Credito Vehicular BBVA', 'TEA', 13.9900, 12, true, 0.0450, true, 0.1500, true, 12.00, true);
+CREATE TABLE Promocion (
+  id_promocion INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL,
+  id_producto INT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  descripcion TEXT,
+  beneficio VARCHAR(150) NOT NULL,
+  estado VARCHAR(20) DEFAULT 'activa',
+  fecha_inicio DATE NULL,
+  fecha_fin DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES User(id_user),
+  FOREIGN KEY (id_producto) REFERENCES ProductoFinanciero(id_producto)
+);
+
+CREATE TABLE BankConfig (
+  id_config INT AUTO_INCREMENT PRIMARY KEY,
+  id_user INT NOT NULL UNIQUE,
+  nombre_comercial VARCHAR(100),
+  color_principal VARCHAR(20) DEFAULT '#e458c6',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_user) REFERENCES User(id_user)
+);

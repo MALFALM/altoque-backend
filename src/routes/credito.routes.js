@@ -476,6 +476,63 @@ router.get("/:id/cronograma", authenticateToken, authorizeRoles("client", "admin
   }
 });
 
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        c.id_credito,
+        c.id_user,
+        c.fecha_solicitud,
+        c.tipo_moneda,
+        c.cuota_inicial,
+        c.metodo_pago,
+        c.tipo_tasa,
+        c.tasa_valor,
+        c.plazo_meses,
+        c.VAN,
+        c.TIR,
+        c.TCEA,
+        c.cuota_final_inteligente,
+        c.tasa_desgravamen,
+        c.seguro_vehicular,
+        c.portes,
+
+        cl.id_cliente,
+        cl.nombres,
+        cl.apellidos,
+        cl.correo,
+
+        v.id_vehiculo,
+        v.marca,
+        v.modelo,
+        v.year_fabricacion,
+        v.precio_venta,
+        v.tipo_moneda AS moneda_vehiculo
+      FROM Credito c
+      INNER JOIN Cliente cl ON c.id_cliente = cl.id_cliente
+      INNER JOIN Vehiculo v ON c.id_vehiculo = v.id_vehiculo
+      WHERE c.id_user = ?
+      ORDER BY c.id_credito DESC
+      `,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: rows
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener simulaciones del usuario",
+      error: error.message
+    });
+  }
+});
+
 router.get("/:id", authenticateToken, authorizeRoles("client", "admin"), async (req, res) => {
   try {
     const { id } = req.params;
