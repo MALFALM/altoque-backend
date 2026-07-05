@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -78,10 +78,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -110,6 +110,7 @@ jobs:
       - name: ZAP baseline scan
         run: |
           mkdir -p zap-reports
+          chmod 777 zap-reports
           docker run --rm --network host \
             -v "${{ github.workspace }}:/zap/wrk/:rw" \
             -w /zap/wrk \
@@ -124,13 +125,14 @@ jobs:
             -w zap-reports/zap-baseline-report.md \
             -I
           chmod -R a+r zap-reports
+          test -s zap-reports/zap-baseline-report.html
 
       - name: List ZAP reports
         if: always()
         run: ls -la zap-reports
 
       - name: Upload ZAP report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: zap-baseline-report
