@@ -51,6 +51,12 @@ npm run dev
 
 Backend esperado: `http://localhost:3000`.
 
+En produccion o CI usa:
+
+```bash
+npm start
+```
+
 ## Crear primer admin
 
 El registro publico solo crea usuarios `client`. Para crear el primer administrador usa el endpoint de bootstrap. Solo funciona si no existe ningun admin.
@@ -96,5 +102,21 @@ Luego inicia sesion desde el frontend con esas credenciales.
 - Autorizacion por roles.
 - Registro publico restringido a rol `client`.
 - CORS limitado por `CORS_ORIGIN`.
+- Headers de seguridad con Helmet.
+- Rate limiting general y especifico para auth.
+- Validacion basica de parametros y payloads de entrada.
 - Usuarios banco asociados a una entidad financiera.
 - Bancos solo pueden editar productos de su entidad.
+
+## Calidad y seguridad en CI
+
+Scripts locales:
+
+```bash
+npm test
+npm run lint
+npm run audit
+```
+
+El workflow `.github/workflows/security-ci.yml` ejecuta tests, ESLint con reglas de seguridad,
+`npm audit`, Semgrep, Gitleaks y un ZAP baseline contra el backend levantado con MySQL.

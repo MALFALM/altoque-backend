@@ -2,6 +2,11 @@
 const router = express.Router();
 const pool = require("../config/db");
 const { authenticateToken, authorizeRoles } = require("../middleware/auth.middleware");
+const {
+  validateNumericParam,
+  validateSimulation,
+  validateSaveSimulation
+} = require("../middleware/validation.middleware");
 
 function redondear(valor, decimales = 2) {
   return Number(Number(valor || 0).toFixed(decimales));
@@ -237,7 +242,17 @@ function buildSimulation(body) {
   };
 }
 
-router.post("/simular", (req, res) => {
+function authorizeOwnUserParam(req, res, next) {
+  if (req.user.rol === "client" && String(req.user.id_user) !== String(req.params.userId)) {
+    return res.status(403).json({
+      success: false,
+      message: "No tienes permisos para esta accion"
+    });
+  }
+  return next();
+}
+
+router.post("/simular", validateSimulation, (req, res) => {
   try {
     return res.json(buildSimulation(req.body));
   } catch (error) {
@@ -245,7 +260,7 @@ router.post("/simular", (req, res) => {
   }
 });
 
-router.post("/guardar", authenticateToken, authorizeRoles("client", "admin"), async (req, res) => {
+router.post("/guardar", authenticateToken, authorizeRoles("client", "admin"), validateSaveSimulation, async (req, res) => {
   const connection = await pool.getConnection();
 
   try {
@@ -411,7 +426,7 @@ router.post("/guardar", authenticateToken, authorizeRoles("client", "admin"), as
   } catch (error) {
     await connection.rollback();
     console.error(error);
-    return res.status(500).json({ success: false, message: "Error al guardar la simulacion", error: error.message });
+    return res.status(500).json({ success: false, message: "Error al guardar la simulacion" });
   } finally {
     connection.release();
   }
@@ -443,11 +458,12 @@ router.get("/", authenticateToken, authorizeRoles("client", "admin"), async (req
 
     res.json({ success: true, data: rows });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error al listar creditos", error: error.message });
+    console.error("Error al listar creditos:", error);
+    res.status(500).json({ success: false, message: "Error al listar creditos" });
   }
 });
 
-router.get("/:id/cronograma", authenticateToken, authorizeRoles("client", "admin"), async (req, res) => {
+router.get("/:id/cronograma", authenticateToken, authorizeRoles("client", "admin"), validateNumericParam("id"), async (req, res) => {
   try {
     const { id } = req.params;
     const params = [id];
@@ -472,11 +488,12 @@ router.get("/:id/cronograma", authenticateToken, authorizeRoles("client", "admin
 
     res.json({ success: true, data: rows });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error al obtener cronograma", error: error.message });
+    console.error("Error al obtener cronograma:", error);
+    res.status(500).json({ success: false, message: "Error al obtener cronograma" });
   }
 });
 
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userId", authenticateToken, authorizeRoles("client", "admin"), validateNumericParam("userId"), authorizeOwnUserParam, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -525,15 +542,15 @@ router.get("/user/:userId", async (req, res) => {
       data: rows
     });
   } catch (error) {
+    console.error("Error al obtener simulaciones del usuario:", error);
     res.status(500).json({
       success: false,
-      message: "Error al obtener simulaciones del usuario",
-      error: error.message
+      message: "Error al obtener simulaciones del usuario"
     });
   }
 });
 
-router.get("/:id", authenticateToken, authorizeRoles("client", "admin"), async (req, res) => {
+router.get("/:id", authenticateToken, authorizeRoles("client", "admin"), validateNumericParam("id"), async (req, res) => {
   try {
     const { id } = req.params;
     const params = [id];
@@ -561,7 +578,8 @@ router.get("/:id", authenticateToken, authorizeRoles("client", "admin"), async (
 
     res.json({ success: true, data: rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error al obtener credito", error: error.message });
+    console.error("Error al obtener credito:", error);
+    res.status(500).json({ success: false, message: "Error al obtener credito" });
   }
 });
 

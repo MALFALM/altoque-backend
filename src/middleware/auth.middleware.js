@@ -22,7 +22,7 @@ function verifyToken(req, res, next, { optional = false } = {}) {
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     return next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       success: false,
       message: "Token invalido o expirado"

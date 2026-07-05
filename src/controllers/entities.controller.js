@@ -165,7 +165,7 @@ const listEntities = async (req, res) => {
     return res.json({ success: true, data: entities });
   } catch (error) {
     console.error("Error al listar entidades:", error);
-    return res.status(500).json({ success: false, message: "Error al listar entidades", error: error.message });
+    return res.status(500).json({ success: false, message: "Error al listar entidades" });
   }
 };
 
@@ -206,7 +206,7 @@ const createEntity = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error("Error al crear entidad:", error);
-    return res.status(500).json({ success: false, message: "Error al crear entidad", error: error.message });
+    return res.status(500).json({ success: false, message: "Error al crear entidad" });
   } finally {
     connection.release();
   }
@@ -251,7 +251,7 @@ const updateEntity = async (req, res) => {
     return res.json({ success: true, data: updated });
   } catch (error) {
     console.error("Error al actualizar entidad:", error);
-    return res.status(500).json({ success: false, message: "Error al actualizar entidad", error: error.message });
+    return res.status(500).json({ success: false, message: "Error al actualizar entidad" });
   }
 };
 
@@ -299,7 +299,7 @@ const createProduct = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error("Error al crear producto:", error);
-    return res.status(500).json({ success: false, message: "Error al crear producto", error: error.message });
+    return res.status(500).json({ success: false, message: "Error al crear producto" });
   } finally {
     connection.release();
   }
@@ -355,7 +355,7 @@ const updateProduct = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error("Error al actualizar producto:", error);
-    return res.status(500).json({ success: false, message: "Error al actualizar producto", error: error.message });
+    return res.status(500).json({ success: false, message: "Error al actualizar producto" });
   } finally {
     connection.release();
   }

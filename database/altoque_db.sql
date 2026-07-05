@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS CronogramaPago;
 DROP TABLE IF EXISTS Credito;
 DROP TABLE IF EXISTS Promocion;
 DROP TABLE IF EXISTS ProductoFinanciero;
+DROP TABLE IF EXISTS BankConfig;
 DROP TABLE IF EXISTS Cliente;
 DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Vehiculo;
@@ -23,8 +24,12 @@ CREATE TABLE User (
   username VARCHAR(100) NOT NULL UNIQUE,
   password_hash VARCHAR(256) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'client',
+  id_entidad_financiera VARCHAR(50) NULL,
   estado_cuenta BOOL NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  suspension_until DATETIME NULL,
+  suspension_reason VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_entidad_financiera) REFERENCES EntidadFinanciera(id_entidad_financiera)
 );
 
 CREATE TABLE Cliente (
@@ -125,35 +130,6 @@ CREATE TABLE CronogramaPago (
   amortizacion DECIMAL(14,2) NOT NULL,
   saldo_final_mes DECIMAL(14,2) NOT NULL,
   FOREIGN KEY (id_credito) REFERENCES Credito(id_credito)
-);
-
-CREATE TABLE ProductoFinanciero (
-  id_producto INT AUTO_INCREMENT PRIMARY KEY,
-  id_user INT NOT NULL,
-  nombre_producto VARCHAR(100) NOT NULL,
-  tasa_valor DECIMAL(10,2) NOT NULL,
-  tipo_tasa VARCHAR(20) NOT NULL,
-  desgravamen_mensual DECIMAL(10,2) DEFAULT 0,
-  seguro_vehicular DECIMAL(10,2) DEFAULT 0,
-  portes_fijo DECIMAL(10,2) DEFAULT 0,
-  estado BOOL DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_user) REFERENCES User(id_user)
-);
-
-CREATE TABLE Promocion (
-  id_promocion INT AUTO_INCREMENT PRIMARY KEY,
-  id_user INT NOT NULL,
-  id_producto INT NULL,
-  nombre VARCHAR(100) NOT NULL,
-  descripcion TEXT,
-  beneficio VARCHAR(150) NOT NULL,
-  estado VARCHAR(20) DEFAULT 'activa',
-  fecha_inicio DATE NULL,
-  fecha_fin DATE NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (id_user) REFERENCES User(id_user),
-  FOREIGN KEY (id_producto) REFERENCES ProductoFinanciero(id_producto)
 );
 
 CREATE TABLE BankConfig (

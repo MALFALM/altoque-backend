@@ -176,7 +176,7 @@ const bootstrapAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear admin inicial:", error);
-    return res.status(500).json({ message: "Error al crear admin inicial", error: error.message });
+    return res.status(500).json({ message: "Error al crear admin inicial" });
   }
 };
 
@@ -189,7 +189,7 @@ const getUsers = async (req, res) => {
     res.json({ success: true, data: users });
   } catch (error) {
     console.error("Error al listar usuarios:", error);
-    res.status(500).json({ success: false, message: "Error al listar usuarios", error: error.message });
+    res.status(500).json({ success: false, message: "Error al listar usuarios" });
   }
 };
 
@@ -219,7 +219,7 @@ const updateUserRole = async (req, res) => {
     res.json({ message: "Rol actualizado correctamente", id_user: id, rol, bankId: entityId });
   } catch (error) {
     console.error("Error al actualizar rol:", error);
-    res.status(500).json({ message: "Error al actualizar rol", error: error.message });
+    res.status(500).json({ message: "Error al actualizar rol" });
   }
 };
 
@@ -279,7 +279,7 @@ const createBankUser = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error("Error al crear banco:", error);
-    return res.status(500).json({ message: "Error al crear banco", error: error.message });
+    return res.status(500).json({ message: "Error al crear banco" });
   } finally {
     connection.release();
   }
@@ -287,7 +287,8 @@ const createBankUser = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const { id_user, currentPassword, newPassword } = req.body;
+    const id_user = req.user.id_user;
+    const { currentPassword, newPassword } = req.body;
 
     if (!id_user || !currentPassword || !newPassword) {
       return res.status(400).json({
@@ -339,8 +340,7 @@ const changePassword = async (req, res) => {
     console.error("Error al cambiar contraseña:", error);
 
     return res.status(500).json({
-      message: "Error al cambiar contraseña",
-      error: error.message
+      message: "Error al cambiar contraseña"
     });
   }
 };
@@ -379,8 +379,7 @@ const suspendUser = async (req, res) => {
     console.error("Error al suspender cuenta:", error);
 
     return res.status(500).json({
-      message: "Error al suspender cuenta",
-      error: error.message
+      message: "Error al suspender cuenta"
     });
   }
 };
