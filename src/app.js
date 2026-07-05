@@ -7,6 +7,7 @@ require("dotenv").config({ quiet: process.env.NODE_ENV === "test" });
 const authRoutes = require("./routes/auth.routes");
 const creditoRoutes = require("./routes/credito.routes");
 const supportRoutes = require("./routes/support.routes");
+const entitiesRoutes = require("./routes/entities.routes");
 
 const app = express();
 app.disable("x-powered-by");
@@ -67,6 +68,7 @@ app.use("/api/auth/bootstrap-admin", authLimiter);
 app.use("/api/auth", apiLimiter, authRoutes);
 app.use("/api/creditos", apiLimiter, creditoRoutes);
 app.use("/api/entities", apiLimiter, entitiesRoutes);
+app.use("/api/support", apiLimiter, supportRoutes);
 
 app.use((err, req, res, _next) => {
   const status = err.status || err.statusCode || 500;
@@ -79,7 +81,7 @@ app.use((err, req, res, _next) => {
     message: status >= 500 ? "Error interno del servidor" : err.message
   });
 });
-
+/*
 app.use("/api/auth", authRoutes);
 app.use("/api/creditos", creditoRoutes);
 app.use("/api/support", supportRoutes);
@@ -89,3 +91,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
+*/
+module.exports = app;
