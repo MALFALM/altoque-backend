@@ -110,9 +110,8 @@ jobs:
       - name: ZAP baseline scan
         run: |
           mkdir -p zap-reports
-          chmod 777 zap-reports
           docker run --rm --network host \
-            -v "${{ github.workspace }}:/zap/wrk/:rw" \
+            -v "${{ github.workspace }}/zap-reports:/zap/wrk/:rw" \
             -w /zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
@@ -120,11 +119,10 @@ jobs:
             -a \
             -m 3 \
             -T 60 \
-            -r zap-reports/zap-baseline-report.html \
-            -J zap-reports/zap-baseline-report.json \
-            -w zap-reports/zap-baseline-report.md \
+            -r zap-baseline-report.html \
+            -J zap-baseline-report.json \
+            -w zap-baseline-report.md \
             -I
-          chmod -R a+r zap-reports
           test -s zap-reports/zap-baseline-report.html
 
       - name: List ZAP reports
