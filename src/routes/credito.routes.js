@@ -70,6 +70,20 @@ function calculateTCEA(monthlyIRR) {
   return Math.pow(1 + monthlyIRR, 12) - 1;
 }
 
+function stripInternalScheduleFields(row) {
+  const {
+    _rawTotalQuota,
+    _rawInterest,
+    _rawExcelQuota,
+    _rawAmortization,
+    _rawDesgravamen,
+    _rawFixedCharges,
+    _rawResidualPayment,
+    ...publicRow
+  } = row;
+  return publicRow;
+}
+
 function generateSchedule({
   loanAmount,
   monthlyRate,
@@ -81,7 +95,13 @@ function generateSchedule({
   gracePeriodsPartial = 0
 }) {
   const schedule = [];
-  let balance = loanAmount;
+  const paymentRate = monthlyRate + desgravamenRate;
+  let balance = residualValue > 0
+    ? loanAmount - (residualValue / Math.pow(1 + paymentRate, periods + 1))
+    : loanAmount;
+  let residualBalance = residualValue > 0
+    ? residualValue / Math.pow(1 + paymentRate, periods + 1)
+    : 0;
   const totalGracePeriods = gracePeriodsTotal + gracePeriodsPartial;
   const normalPeriods = periods - totalGracePeriods;
 
@@ -93,6 +113,9 @@ function generateSchedule({
     const initialBalance = balance;
     const interest = initialBalance * monthlyRate;
     const desgravamenAmount = initialBalance * desgravamenRate;
+    const residualInitialBalance = residualBalance;
+    const residualInterest = residualInitialBalance * monthlyRate;
+    const residualDesgravamen = residualInitialBalance * desgravamenRate;
 
     let amortization = 0;
     let quota = 0;
@@ -102,27 +125,30 @@ function generateSchedule({
     if (month <= gracePeriodsTotal) {
       type = "Gracia Total";
       quota = 0;
-      amortization = -interest;
+      amortization = 0;
     } else if (month <= totalGracePeriods) {
       type = "Gracia Parcial";
       quota = interest;
       amortization = 0;
     } else {
       const remainingPeriods = periods - month + 1;
-      quota = calculateFrenchQuota(initialBalance, monthlyRate, remainingPeriods, residualValue);
-
-      if (month === periods) {
-        residualPayment = residualValue;
-        amortization = initialBalance;
-        quota = interest + amortization;
-      } else {
-        amortization = quota - interest;
-      }
+      const quotaWithDesgravamen = calculateFrenchQuota(initialBalance, paymentRate, remainingPeriods);
+      amortization = quotaWithDesgravamen - interest - desgravamenAmount;
+      quota = quotaWithDesgravamen - desgravamenAmount;
     }
 
+    const excelQuota = type === "Gracia Total"
+      ? 0
+      : type === "Cuota Normal"
+        ? quota + desgravamenAmount
+        : quota;
     const insurance = monthlyInsuranceFixed + desgravamenAmount;
-    const totalQuota = quota + insurance;
-    const finalBalance = initialBalance - amortization;
+    const cashFlow = quota + insurance;
+    const totalQuota = type === "Gracia Total" ? 0 : cashFlow;
+    const finalBalance = month <= gracePeriodsTotal
+      ? initialBalance + interest
+      : initialBalance - amortization;
+    const residualFinalBalance = residualInitialBalance + residualInterest + residualDesgravamen;
 
     schedule.push({
       month,
@@ -136,10 +162,49 @@ function generateSchedule({
       quota: redondear(quota),
       residualPayment: redondear(residualPayment),
       totalQuota: redondear(totalQuota),
-      finalBalance: redondear(Math.abs(finalBalance) < 0.01 ? 0 : finalBalance)
+      finalBalance: redondear(Math.abs(finalBalance) < 0.01 ? 0 : finalBalance),
+      _rawTotalQuota: cashFlow,
+      _rawInterest: interest,
+      _rawExcelQuota: excelQuota,
+      _rawAmortization: amortization,
+      _rawDesgravamen: desgravamenAmount,
+      _rawFixedCharges: monthlyInsuranceFixed,
+      _rawResidualPayment: residualPayment
     });
 
     balance = finalBalance;
+    residualBalance = residualFinalBalance;
+  }
+
+  if (residualValue > 0) {
+    const residualInitialBalance = residualBalance;
+    const residualInterest = residualInitialBalance * monthlyRate;
+    const residualDesgravamen = residualInitialBalance * desgravamenRate;
+    const residualAmortization = residualInitialBalance + residualInterest + residualDesgravamen;
+    const fixedCharges = monthlyInsuranceFixed;
+    const residualPayment = residualAmortization;
+
+    schedule.push({
+      month: periods + 1,
+      type: "Cuota Final",
+      initialBalance: 0,
+      interest: redondear(residualInterest),
+      amortization: 0,
+      desgravamen: redondear(residualDesgravamen),
+      fixedCharges: redondear(fixedCharges),
+      insurance: redondear(fixedCharges + residualDesgravamen),
+      quota: 0,
+      residualPayment: redondear(residualPayment),
+      totalQuota: redondear(residualPayment + fixedCharges),
+      finalBalance: 0,
+      _rawTotalQuota: residualPayment + fixedCharges,
+      _rawInterest: residualInterest,
+      _rawExcelQuota: 0,
+      _rawAmortization: 0,
+      _rawDesgravamen: residualDesgravamen,
+      _rawFixedCharges: fixedCharges,
+      _rawResidualPayment: residualPayment
+    });
   }
 
   return schedule;
@@ -198,16 +263,18 @@ function buildSimulation(body) {
     gracePeriodsPartial
   });
 
-  const cashFlows = schedule.map((row) => row.totalQuota);
+  const cashFlows = schedule.map((row) => row._rawTotalQuota ?? row.totalQuota);
   const discountRate = effectiveAnnualToPeriod(0.1, 12);
-  const van = calculateNPV(loanAmount, cashFlows, discountRate);
+  const van = -calculateNPV(loanAmount, cashFlows, discountRate);
   const monthlyIRR = calculateIRR(loanAmount, cashFlows);
   const tcea = calculateTCEA(monthlyIRR);
   const normalQuota = schedule.find((row) => row.type === "Cuota Normal");
   const totalPaid = cashFlows.reduce((sum, value) => sum + value, 0);
-  const totalInterest = schedule.reduce((sum, row) => sum + row.interest, 0);
-  const totalDesgravamen = schedule.reduce((sum, row) => sum + row.desgravamen, 0);
-  const totalFixedCharges = schedule.reduce((sum, row) => sum + row.fixedCharges, 0);
+  const totalExcelQuota = schedule.reduce((sum, row) => sum + (row._rawExcelQuota ?? row.quota), 0);
+  const totalAmortization = schedule.reduce((sum, row) => sum + (row._rawAmortization ?? row.amortization), 0);
+  const totalDesgravamen = schedule.reduce((sum, row) => sum + (row._rawDesgravamen ?? row.desgravamen), 0);
+  const totalFixedCharges = schedule.reduce((sum, row) => sum + (row._rawFixedCharges ?? row.fixedCharges), 0);
+  const totalInterest = totalExcelQuota - totalAmortization - totalDesgravamen;
 
   return {
     success: true,
@@ -238,7 +305,7 @@ function buildSimulation(body) {
       totalDesgravamen: redondear(totalDesgravamen),
       totalFixedCharges: redondear(totalFixedCharges)
     },
-    schedule
+    schedule: schedule.map(stripInternalScheduleFields)
   };
 }
 

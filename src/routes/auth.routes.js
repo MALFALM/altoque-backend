@@ -26,11 +26,11 @@ const {
 
 router.post("/register", register);
 router.post("/login", login);
-router.get("/users", getUsers);
-router.patch("/users/:id/role", updateUserRole);
-router.post("/banks", createBankUser);
-router.patch("/change-password", changePassword);
-router.patch("/users/:id/suspend", suspendUser);
-router.patch("/users/:id/profile", updateProfile);
+router.get("/users", authenticateToken, authorizeRoles("admin"), getUsers);
+router.patch("/users/:id/role", authenticateToken, authorizeRoles("admin"), validateNumericParam("id"), validateRoleUpdate, updateUserRole);
+router.post("/banks", authenticateToken, authorizeRoles("admin"), validateBankUser, createBankUser);
+router.patch("/change-password", authenticateToken, validateChangePassword, changePassword);
+router.patch("/users/:id/suspend", authenticateToken, authorizeRoles("admin"), validateNumericParam("id"), validateSuspendUser, suspendUser);
+router.patch("/users/:id/profile", authenticateToken, validateNumericParam("id"), updateProfile);
 
 module.exports = router;

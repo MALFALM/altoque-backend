@@ -9,6 +9,11 @@ if (!process.env.JWT_SECRET) {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Servidor backend corriendo en http://localhost:${PORT}`);
+});
+
+server.on("error", (error) => {
+  console.error("Error al iniciar el servidor:", error);
+  process.exit(1);
 });
