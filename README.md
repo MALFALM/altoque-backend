@@ -119,4 +119,4 @@ npm run audit
 ```
 
 El workflow `.github/workflows/security-ci.yml` ejecuta tests, ESLint con reglas de seguridad,
-`npm audit`, Semgrep, Gitleaks y un ZAP baseline contra el backend levantado con MySQL.
+`npm audit`, Semgrep, TruffleHog y un ZAP baseline contra el backend levantado con MySQL.
