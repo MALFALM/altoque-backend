@@ -110,6 +110,7 @@ jobs:
       - name: ZAP baseline scan
         run: |
           mkdir -p zap-reports
+          chmod 777 zap-reports
           docker run --rm --network host \
             -v "${{ github.workspace }}/zap-reports:/zap/wrk/:rw" \
             -w /zap/wrk \
