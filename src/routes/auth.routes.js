@@ -1,9 +1,21 @@
 const express = require("express");
 const router = express.Router();
+const { authenticateToken, authorizeRoles } = require("../middleware/auth.middleware");
+const {
+  validateNumericParam,
+  validateRegister,
+  validateLogin,
+  validateBootstrapAdmin,
+  validateRoleUpdate,
+  validateBankUser,
+  validateChangePassword,
+  validateSuspendUser
+} = require("../middleware/validation.middleware");
 
 const {
   register,
   login,
+  bootstrapAdmin,
   getUsers,
   updateUserRole,
   createBankUser,

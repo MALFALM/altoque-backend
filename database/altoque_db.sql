@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS altoque_db;
+﻿CREATE DATABASE IF NOT EXISTS altoque_db;
 USE altoque_db;
 
 DROP TABLE IF EXISTS SupportMessage;
@@ -7,15 +7,18 @@ DROP TABLE IF EXISTS Promocion;
 DROP TABLE IF EXISTS ProductoFinanciero;
 DROP TABLE IF EXISTS CronogramaPago;
 DROP TABLE IF EXISTS Credito;
-DROP TABLE IF EXISTS Vehiculo;
+DROP TABLE IF EXISTS Promocion;
+DROP TABLE IF EXISTS ProductoFinanciero;
+DROP TABLE IF EXISTS BankConfig;
 DROP TABLE IF EXISTS Cliente;
 DROP TABLE IF EXISTS `User`;
 
 CREATE TABLE `User` (
   id_user INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(50) NOT NULL UNIQUE,
+  username VARCHAR(100) NOT NULL UNIQUE,
   password_hash VARCHAR(256) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'client',
+  id_entidad_financiera VARCHAR(50) NULL,
   estado_cuenta BOOL NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   suspension_until DATETIME NULL,
@@ -30,7 +33,7 @@ CREATE TABLE Cliente (
   numero_documento VARCHAR(11) NOT NULL UNIQUE,
   nombres VARCHAR(50),
   apellidos VARCHAR(50),
-  telefono VARCHAR(12) UNIQUE,
+  telefono VARCHAR(12),
   ingreso_mensual DECIMAL(14,2),
   correo VARCHAR(50) UNIQUE,
   FOREIGN KEY (id_user) REFERENCES `User`(id_user)
@@ -38,11 +41,40 @@ CREATE TABLE Cliente (
 
 CREATE TABLE Vehiculo (
   id_vehiculo INT AUTO_INCREMENT PRIMARY KEY,
-  marca VARCHAR(20) NOT NULL,
-  modelo VARCHAR(20) NOT NULL,
+  marca VARCHAR(50) NOT NULL,
+  modelo VARCHAR(80) NOT NULL,
   year_fabricacion VARCHAR(4) NOT NULL,
   precio_venta DECIMAL(14,2) NOT NULL,
   tipo_moneda VARCHAR(10) NOT NULL
+);
+
+CREATE TABLE ProductoFinanciero (
+  id_producto VARCHAR(80) PRIMARY KEY,
+  id_entidad_financiera VARCHAR(50) NOT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  tipo_tasa VARCHAR(10) NOT NULL DEFAULT 'TEA',
+  tasa_valor DECIMAL(12,4) NOT NULL DEFAULT 0,
+  capitalizacion INT NOT NULL DEFAULT 12,
+  has_desgravamen BOOL NOT NULL DEFAULT TRUE,
+  tasa_desgravamen DECIMAL(12,4) NOT NULL DEFAULT 0,
+  has_seguro_vehicular BOOL NOT NULL DEFAULT TRUE,
+  seguro_vehicular_pct DECIMAL(12,4) NOT NULL DEFAULT 0,
+  has_portes BOOL NOT NULL DEFAULT TRUE,
+  portes_valor DECIMAL(14,2) NOT NULL DEFAULT 0,
+  activo BOOL NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_entidad_financiera) REFERENCES EntidadFinanciera(id_entidad_financiera)
+);
+
+CREATE TABLE Promocion (
+  id_promocion VARCHAR(80) PRIMARY KEY,
+  id_producto VARCHAR(80) NOT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  tipo VARCHAR(40) NOT NULL,
+  valor DECIMAL(14,4) NOT NULL DEFAULT 0,
+  activa BOOL NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_producto) REFERENCES ProductoFinanciero(id_producto) ON DELETE CASCADE
 );
 
 CREATE TABLE Credito (
@@ -51,9 +83,12 @@ CREATE TABLE Credito (
   id_user INT NOT NULL,
   id_vehiculo INT NOT NULL,
   fecha_solicitud DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  nombre_simulacion VARCHAR(120),
+  entidad_financiera VARCHAR(50),
+  producto_financiero VARCHAR(80),
   tipo_moneda VARCHAR(10) NOT NULL,
   cuota_inicial DECIMAL(14,2) NOT NULL,
-  metodo_pago VARCHAR(20) NOT NULL,
+  metodo_pago VARCHAR(30) NOT NULL,
   tipo_tasa VARCHAR(10) NOT NULL,
   capitalizacion VARCHAR(20) NOT NULL DEFAULT 'N/A',
   tasa_valor DECIMAL(12,4) NOT NULL,
